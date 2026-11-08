@@ -63,7 +63,7 @@ jobs:
 
       - name: آیکون و صفحه شروع
         continue-on-error: true
-        run: npx @capacitor/assets generate --android --iconBackgroundColor '#1877F2' --iconBackgroundColorDark '#1877F2' --splashBackgroundColor '#FBF6EC' --splashBackgroundColorDark '#0E1420'
+        run: npx @capacitor/assets generate --android --iconBackgroundColor '#FFFFFF' --iconBackgroundColorDark '#FFFFFF' --splashBackgroundColor '#FBF6EC' --splashBackgroundColorDark '#0E1420'
 
       - name: همگام‌سازی
         run: npx cap sync android

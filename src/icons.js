@@ -49,10 +49,4 @@ export function icon(name, size = 20, cls = '') {
   return `<svg class="ic ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name] || ''}</svg>`;
 }
 
-export const LOGO_MARK = `<svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true">
-  <defs><linearGradient id="lg-apex" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B8BFF"/><stop offset="1" stop-color="#1464D8"/></linearGradient></defs>
-  <rect width="48" height="48" rx="14" fill="url(#lg-apex)"/>
-  <path d="M13 35 24 13l11 22" fill="none" stroke="#FFF7E8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M18.5 28h11" stroke="#FFF7E8" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="35.5" cy="12.5" r="3.6" fill="#FFC53D"/>
-</svg>`;
+export const LOGO_MARK = `<svg class="logo-mark" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="22" y="22" width="980" height="980" rx="230" fill="#FFFFFF" stroke="#0B1A66" stroke-width="30"/><g> <path d="M540 214 H760 L842 296 V600" fill="none" stroke="#0B1A66" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/> <path d="M760 214 V262 a34 34 0 0 0 34 34 H842 Z" fill="#F5A70A"/> <path d="M610 330 H730 M610 398 H770 M610 466 H770" stroke="#0B1A66" stroke-width="30" stroke-linecap="round"/> <path d="M292 424 V360 a42 42 0 0 1 42 -42 H446 a42 42 0 0 1 42 42 V424" fill="none" stroke="#0B1A66" stroke-width="40"/> <rect x="166" y="416" width="448" height="372" rx="58" fill="#0B1A66"/> <path d="M166 572 H614" stroke="#FFFFFF" stroke-width="20"/> <rect x="352" y="540" width="76" height="66" rx="14" fill="#F5A70A" stroke="#FFFFFF" stroke-width="12"/> <polyline points="150,900 420,690 556,792 812,588" fill="none" stroke="#FFFFFF" stroke-width="104" stroke-linejoin="round" stroke-linecap="round"/> <polygon points="912,506 744,522 852,662" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="36" stroke-linejoin="round"/> <polyline points="150,900 420,690 556,792 812,588" fill="none" stroke="#F5A70A" stroke-width="62" stroke-linejoin="miter"/> <polygon points="912,506 760,530 846,640" fill="#F5A70A"/> </g></svg>`;

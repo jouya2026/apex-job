@@ -11,6 +11,7 @@ import { setAds, heroSliderHtml, feedAdHtml, detailAdHtml, renderSticker, mountA
 import { isNative, applyNotificationSetting } from './notify.js';
 import { buildFaq, waMessage, mergeSettings } from './faq.js';
 import { PROVINCES, CATEGORIES } from './data/taxonomy.js';
+import { initPwa, installBannerHtml, installPwa, dismissPwa } from './pwa.js';
 
 // ---------------------------------------------------------------- state
 const DEFAULT_FILTERS = { q: '', province: '', category: '', type: '', gender: '', posted: '', quick: '', sort: 'new' };
@@ -28,6 +29,7 @@ const state = {
   settings: mergeSettings(cachedSettings()),
   homeScroll: 0,
   detail: null,
+  showOriginal: false,
 };
 if (!state.seenAt) { state.seenAt = Date.now(); store.set('aj.seenAt', state.seenAt); }
 
@@ -98,6 +100,20 @@ const norm = (s) => String(s || '').toLowerCase()
   .replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/[ً-ٰٟ]/g, '')
   .replace(/[‌‏]/g, ' ');
 
+/** عنوان وظیفه به زبان اپ (اگر ترجمه موجود باشد) */
+const jt = (j) => (getLang() !== 'en' && j?.title_tr?.[getLang()]) || j?.title || '';
+/** نسخه ترجمه‌شده جزئیات وظیفه به زبان اپ */
+function localized(job) {
+  const lang = getLang();
+  const tr = job?.tr?.[lang];
+  if (lang === 'en' || state.showOriginal || !tr) return job;
+  const out = { ...job, title: jt(job) };
+  for (const k of ['about_html', 'summary_html', 'requirements_html', 'submission_html', 'education', 'experience', 'salary', 'contract_duration']) {
+    if (tr[k] && String(tr[k]).trim()) out[k] = tr[k];
+  }
+  return out;
+}
+
 function jobUrl(id) {
   const base = CONFIG.siteUrl || (location.protocol.startsWith('http') && !isNative() ? location.href.split('#')[0] : '');
   return base ? `${base.replace(/#.*$/, '')}#/job/${id}` : '';
@@ -138,7 +154,7 @@ function matches(j, f, skipQ = false) {
   if (f.quick === 'new' && !isNew(j)) return false;
   if (f.quick === 'soon') { const d = daysLeft(j); if (d === null || d < 0 || d > 3) return false; }
   if (!skipQ && f.q.trim()) {
-    const hay = norm([j.title, j.organization, j.category, trCategory(j.category), j.job_type, trType(j.job_type),
+    const hay = norm([j.title, j.title_tr?.fa, j.title_tr?.ps, j.organization, j.category, trCategory(j.category), j.job_type, trType(j.job_type),
       j.location_raw, ...(j.locations || []), ...(j.locations || []).map((p) => trProvince(p))].join(' '));
     for (const tok of norm(f.q).split(/\s+/).filter(Boolean)) if (!hay.includes(tok)) return false;
   }
@@ -208,7 +224,7 @@ function jobCard(j, compact = false) {
   return `<article class="job-card${fresh ? ' is-new' : ''}${compact ? ' compact' : ''}">
     ${avatar(j.organization)}
     <div class="jc-main">
-      <h3 class="jc-title" dir="auto"><a class="stretched" href="#/job/${j.id}">${esc(j.title)}</a></h3>
+      <h3 class="jc-title" dir="auto"><a class="stretched" href="#/job/${j.id}">${esc(jt(j))}</a></h3>
       <div class="jc-org" dir="auto">${esc(j.organization)}</div>
       <div class="jc-meta">
         ${j.locations?.length || j.location_raw ? `<span>${icon('pin', 15)}${provincesText(j)}</span>` : ''}
@@ -322,7 +338,7 @@ function heroLatestHtml() {
     <div class="hl-head">${icon('star', 15)}${t('latest')}</div>
     ${latest.map((j) => `<a class="hl-item" href="#/job/${j.id}">
       ${avatar(j.organization)}
-      <span class="hl-text"><b dir="auto">${esc(j.title)}</b><small dir="auto">${esc(j.organization)}</small></span>
+      <span class="hl-text"><b dir="auto">${esc(jt(j))}</b><small dir="auto">${esc(j.organization)}</small></span>
       ${deadlinePill(j)}
     </a>`).join('')}
   </div>`;
@@ -355,6 +371,7 @@ function renderHome() {
       </div>
     </section>
     ${unseen ? `<a class="notice-new" href="#/new">${icon('bell', 18)}<span>${t('newSince', { n: unseen })}</span><b>${t('viewNew')}${icon('next', 16, 'flip')}</b></a>` : ''}
+    ${installBannerHtml()}
     ${state.offline ? `<div class="notice-off">${icon('refresh', 16)}${t('offline')}</div>` : ''}
     ${heroSliderHtml()}
     ${state.loaded ? quickRowHtml() : ''}
@@ -538,7 +555,7 @@ function closeSheet(fromHistory = false) {
 window.addEventListener('popstate', () => { if (sheetOpen()) closeSheet(true); });
 
 // ---------------------------------------------------------------- detail
-const LIST_KEYS = ['id', 'title', 'organization', 'job_type', 'locations', 'location_raw', 'category', 'published', 'closing_date', 'gender', 'first_seen_at'];
+const LIST_KEYS = ['id', 'title', 'title_tr', 'organization', 'job_type', 'locations', 'location_raw', 'category', 'published', 'closing_date', 'gender', 'first_seen_at'];
 const pickList = (j) => Object.fromEntries(LIST_KEYS.map((k) => [k, j[k]]));
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
@@ -606,7 +623,9 @@ async function renderDetail(id) {
     view.innerHTML = `<div class="detail">${detailTop()}${emptyState('search', t('notFound'), '')}</div>`;
     return;
   }
-  document.title = `${job.title} — Apex Job`;
+  document.title = `${jt(job)} — Apex Job`;
+  const L = localized(job);
+  const hasTr = getLang() !== 'en' && !!job.tr?.[getLang()];
   const sec = (key, html) => (html && html.replace(/<[^>]+>/g, '').trim()
     ? `<section class="card prose"><h2>${t(key)}</h2><div class="prose-body" dir="auto">${clean(html)}</div></section>` : '');
   const dl = daysLeft(job);
@@ -625,22 +644,23 @@ async function renderDetail(id) {
             ${fact('clock', t('deadline'), job.closing_date ? `${esc(fmtDate(job.closing_date))}${dl !== null && dl >= 0 ? `<em class="${dl <= 2 ? 'hot' : ''}">${esc(dl === 0 ? t('lastDay') : t('daysLeft', { n: dl }))}</em>` : ''}` : '')}
             ${fact('gender', t('gender'), esc(trGender(job.gender)))}
             ${fact('flag', t('nationality'), esc(trNationality(job.nationality)))}
-            ${fact('money', t('salary'), esc(job.salary))}
-            ${fact('calendar', t('contractDuration'), esc(job.contract_duration))}
+            ${fact('money', t('salary'), esc(L.salary))}
+            ${fact('calendar', t('contractDuration'), esc(L.contract_duration))}
             ${fact('hash', t('vacancyNumber'), esc(job.vacancy_number))}
             ${fact('users', t('positions'), esc(job.positions ? num(job.positions) : ''))}
           </div>
-          ${job.education || job.experience ? `<div class="facts-long">
-            ${fact('cap', t('education'), esc(job.education), true)}
-            ${fact('star', t('experience'), esc(job.experience), true)}
+          ${L.education || L.experience ? `<div class="facts-long">
+            ${fact('cap', t('education'), esc(L.education), true)}
+            ${fact('star', t('experience'), esc(L.experience), true)}
           </div>` : ''}
         </section>
         <div id="ad-slot">${detailAdHtml()}</div>
-        ${sec('aboutOrg', job.about_html)}
-        ${sec('jobSummary', job.summary_html)}
-        ${sec('requirements', job.requirements_html)}
-        ${sec('howToApply', job.submission_html)}
-        ${faqHtml(job)}
+        ${hasTr ? `<div class="tr-note">${icon('globe', 16)}<span>${state.showOriginal ? t('showOriginal') : t('autoTr')}</span><button data-tr-toggle>${state.showOriginal ? t('showTranslation') : t('showOriginal')}</button></div>` : ''}
+        ${sec('aboutOrg', L.about_html)}
+        ${sec('jobSummary', L.summary_html)}
+        ${sec('requirements', L.requirements_html)}
+        ${sec('howToApply', L.submission_html)}
+        ${faqHtml(L)}
       </div>
       <aside class="d-aside">
         <section class="card apply-card" id="apply">
@@ -691,7 +711,7 @@ function detailTop(job) {
 function headInner(job) {
   return `${avatar(job.organization, 'lg')}
     <div class="dh-text">
-      <h1 dir="auto">${esc(job.title)}</h1>
+      <h1 dir="auto">${esc(jt(job))}</h1>
       <p class="dh-org" dir="auto">${icon('building', 16)}${esc(job.organization)}</p>
       <div class="dh-chips">
         ${isNew(job) ? `<span class="star-badge">${icon('star', 13)}${t('new')}</span>` : ''}
@@ -870,13 +890,22 @@ if (touchDevice) {
 
 // ---------------------------------------------------------------- events
 document.addEventListener('click', async (e) => {
-  const el = e.target.closest('[data-wa],[data-save],[data-share],[data-back],[data-quick],[data-cat],[data-fchip],[data-chip-remove],[data-clear],[data-more],[data-open-filters],[data-close-sheet],[data-lang],[data-theme-set],[data-pref],[data-retry],#lang-btn,#theme-btn,[data-scroll-apply]');
+  const el = e.target.closest('[data-tr-toggle],[data-pwa-install],[data-pwa-dismiss],[data-wa],[data-save],[data-share],[data-back],[data-quick],[data-cat],[data-fchip],[data-chip-remove],[data-clear],[data-more],[data-open-filters],[data-close-sheet],[data-lang],[data-theme-set],[data-pref],[data-retry],#lang-btn,#theme-btn,[data-scroll-apply]');
   const menu = $('#lang-menu');
   if (menu && !e.target.closest('.lang-wrap')) menu.classList.remove('open');
   if (!el) return;
   const d = el.dataset;
   const f = state.filters;
 
+  if (d.trToggle !== undefined) {
+    const y = window.scrollY;
+    state.showOriginal = !state.showOriginal;
+    const r = currentRoute();
+    if (r.name === 'job') renderDetail(r.id).then(() => window.scrollTo(0, y));
+    return;
+  }
+  if (d.pwaInstall !== undefined) { installPwa(); return; }
+  if (d.pwaDismiss !== undefined) { dismissPwa(); return; }
   if (d.wa) {
     // پیام واتساپ باز می‌شود؛ فقط یک سطر بی‌نام برای پنل مدیریت ثبت می‌شود
     const id = Number(d.wa);
@@ -997,6 +1026,13 @@ async function load() {
 // ---------------------------------------------------------------- start
 applyDocumentLang();
 applyTheme();
+initPwa(() => {
+  // وقتی امکان نصب آماده شد، بنر نصب در صفحه خانه نمایش داده شود
+  const banner = $('#pwa-banner');
+  const html = installBannerHtml();
+  if (banner && !html) banner.remove();
+  else if (!banner && html && currentRoute().name === 'home') $('.hero')?.insertAdjacentHTML('afterend', html);
+});
 if (!configured) state.error = 'not-configured';
 load();
 if (isNative() && state.prefs.notify) setTimeout(() => applyNotificationSetting(true), 1500);

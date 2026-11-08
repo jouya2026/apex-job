@@ -134,6 +134,12 @@ const S = {
     profileHint: 'تنظیمات شخصی شما تنها روی همین دستگاه ذخیره می‌شود.',
     guest: 'مهمان',
     detailsOf: 'مشخصات وظیفه',
+    autoTr: 'ترجمه خودکار از متن اصلی اعلان',
+    showOriginal: 'دیدن متن اصلی',
+    showTranslation: 'دیدن ترجمه',
+    pwaTitle: 'Apex Job را مانند اپلیکیشن روی موبایل خود نصب کنید',
+    pwaIos: 'در Safari دکمه شریک‌سازی (مربع با تیر رو به بالا) را بزنید و «Add to Home Screen» را انتخاب کنید.',
+    pwaBtn: 'نصب',
   },
   ps: {
     tagline: 'هره ورځ نوي کاري فرصتونه',
@@ -261,6 +267,12 @@ const S = {
     profileHint: 'ستاسو شخصي تنظیمات یوازې په همدې وسیله خوندي کېږي.',
     guest: 'مېلمه',
     detailsOf: 'د دندې ځانګړتیاوې',
+    autoTr: 'د اعلان له اصلي متن څخه اتوماتیکه ژباړه',
+    showOriginal: 'اصلي متن وګورئ',
+    showTranslation: 'ژباړه وګورئ',
+    pwaTitle: 'Apex Job د اپلیکیشن په څېر په خپل موبایل کې نصب کړئ',
+    pwaIos: 'په Safari کې د شریکولو تڼۍ (هغه مربع چې پورته غشی لري) کېکاږئ او «Add to Home Screen» وټاکئ.',
+    pwaBtn: 'نصب',
   },
   en: {
     tagline: 'Fresh job opportunities, every day',
@@ -388,6 +400,12 @@ const S = {
     profileHint: 'Your personal settings are stored on this device only.',
     guest: 'Guest',
     detailsOf: 'Job details',
+    autoTr: 'Automatically translated from the original announcement',
+    showOriginal: 'Show original',
+    showTranslation: 'Show translation',
+    pwaTitle: 'Install Apex Job on your phone like an app',
+    pwaIos: 'In Safari, tap the Share button (square with an up arrow) and choose “Add to Home Screen”.',
+    pwaBtn: 'Install',
   },
 };
 

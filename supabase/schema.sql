@@ -31,6 +31,9 @@ create table if not exists public.jobs (
   apply_url         text,
   apply_email       text,
   source_url        text,              -- فقط برای اسکریپر؛ به کاربران داده نمی‌شود
+  title_tr          jsonb,             -- عنوان ترجمه‌شده {fa, ps}
+  tr                jsonb,             -- جزئیات ترجمه‌شده {fa: {...}, ps: {...}}
+  translated_at     timestamptz,
   first_seen_at     timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
@@ -50,7 +53,7 @@ grant select (
   published, closing_date, nationality, gender, salary, contract_duration,
   vacancy_number, positions, education, experience, about_html, summary_html,
   requirements_html, submission_html, apply_url, apply_email,
-  first_seen_at, updated_at
+  first_seen_at, updated_at, title_tr, tr, translated_at
 ) on public.jobs to anon, authenticated;
 
 -- ---------- مدیران ----------

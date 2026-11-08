@@ -1,17 +1,20 @@
 {
+  "id": "./",
   "name": "Apex Job",
   "short_name": "Apex Job",
-  "description": "تازه‌ترین فرصت‌های شغلی افغانستان، هر روز",
+  "description": "تازه‌ترین فرصت‌های کاری افغانستان، هر روز",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "dir": "rtl",
   "lang": "fa",
   "background_color": "#FBF6EC",
-  "theme_color": "#1877F2",
+  "theme_color": "#FBF6EC",
+  "categories": ["business", "productivity"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

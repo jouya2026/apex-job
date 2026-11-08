@@ -587,3 +587,17 @@ body.kb-open { padding-bottom: 0; }
   body.mini-on .side-filters { top: 172px; max-height: calc(100vh - 190px); }
 }
 body.mini-on .results { min-height: 100vh; }
+
+/* ---------- PWA: بنر نصب ---------- */
+.pwa-banner { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 12px 12px 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--brand-100); box-shadow: var(--shadow-sm); }
+.pwa-banner .logo-mark { width: 44px; height: 44px; }
+.pwa-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pwa-text b { font-size: 14px; }
+.pwa-text small { color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+.pwa-banner .btn.sm { height: 38px; padding: 0 14px; border-radius: 12px; font-size: 13.5px; }
+
+/* ---------- ترجمه خودکار ---------- */
+.tr-note { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; background: var(--brand-50); color: var(--ink-2); font-size: 13px; }
+.tr-note .ic { color: var(--brand); }
+.tr-note span { flex: 1; }
+.tr-note button { font-weight: 800; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }

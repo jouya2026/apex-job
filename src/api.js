@@ -7,8 +7,8 @@ export const supabase = configured
   ? createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, { auth: { persistSession: false } })
   : null;
 
-const LIST_COLS = 'id,title,organization,job_type,locations,location_raw,category,published,closing_date,gender,first_seen_at';
-const DETAIL_COLS = LIST_COLS + ',nationality,salary,contract_duration,vacancy_number,positions,education,experience,about_html,summary_html,requirements_html,submission_html,apply_url,apply_email';
+const LIST_COLS = 'id,title,title_tr,organization,job_type,locations,location_raw,category,published,closing_date,gender,first_seen_at';
+const DETAIL_COLS = LIST_COLS + ',nationality,salary,contract_duration,vacancy_number,positions,education,experience,about_html,summary_html,requirements_html,submission_html,apply_url,apply_email,tr';
 
 const store = {
   get(k, d = null) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
