@@ -1,7 +1,5 @@
 // =====================================================================
 //  تنظیمات Apex Job
-//  فقط بخش «اطلاعات تماس شما» را تغییر دهید. کلیدهای Supabase از
-//  GitHub Secrets خوانده می‌شوند (راهنما در README.md).
 // =====================================================================
 
 export const CONFIG = {
@@ -9,17 +7,19 @@ export const CONFIG = {
   version: '1.0.0',
 
   // ---------- اطلاعات تماس شما ----------
-  whatsapp: '93790499585',          // شماره واتساپ با کد کشور، بدون + و صفر
-  phone: '0790499585',              // برای دکمه تماس
+  whatsapp: '93790499585',
+  phone: '0790499585',
+
   officeAddress: {
-    fa: 'آدرس دفتر خود را اینجا بنویسید',
-    ps: 'د دفتر پته دلته ولیکئ',
-    en: 'Write your office address here',
+    fa: '📍 افغانستان، ولایت تخار، شهر تالقان، چوک مرکزی، جوار مارکیت موبایل سنتر، مارکیت مولانا، منزل اول، دکان شماره ۱۲',
+    ps: '📍 افغانستان، تخار ولایت، تالقان ښار، مرکزي چوک، د موبایل سنټر مارکېټ ترڅنګ، مولانا مارکېټ، لومړی منزل، ۱۲ نمبر دوکان',
+    en: '📍 Afghanistan, Takhar Province, Taloqan City, Central Square, Next to Mobile Center Market, Maulana Market, First Floor, Shop No. 12'
   },
-  // ساعت یادآوری روزانه در اپ (وقتی Firebase فعال نیست)
+
+  // ---------- یادآوری روزانه ----------
   dailyReminderHour: 9,
 
-  // ---------- از GitHub Secrets / فایل .env خوانده می‌شود ----------
+  // ---------- تنظیمات Supabase ----------
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
   supabaseKey: import.meta.env.VITE_SUPABASE_KEY || '',
   pushEnabled: import.meta.env.VITE_PUSH_ENABLED === 'true',
