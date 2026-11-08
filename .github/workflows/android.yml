@@ -33,7 +33,14 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
+      # Android SDK از قبل روی سرور GitHub نصب است؛ فقط لایسنس‌ها و نسخه لازم را آماده می‌کنیم
+      - name: آماده‌سازی Android SDK
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKM" ] || SDKM=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
+          echo "sdkmanager: $SDKM"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" > /dev/null || echo "::warning::نصب بسته‌ها ناموفق؛ Gradle خودش آن‌ها را دانلود می‌کند."
 
       - run: npm ci --no-audit --no-fund
 
