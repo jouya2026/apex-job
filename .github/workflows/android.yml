@@ -1,0 +1,105 @@
+name: ساخت اپلیکیشن اندروید (APK)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'scraper/**'
+      - 'supabase/**'
+      - '**.md'
+      - '.github/workflows/scrape.yml'
+      - '.github/workflows/notify.yml'
+      - '.github/workflows/web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GSJ: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      # Android SDK از قبل روی سرور GitHub نصب است؛ فقط لایسنس‌ها و نسخه لازم را آماده می‌کنیم
+      - name: آماده‌سازی Android SDK
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKM" ] || SDKM=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
+          echo "sdkmanager: $SDKM"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" > /dev/null || echo "::warning::نصب بسته‌ها ناموفق؛ Gradle خودش آن‌ها را دانلود می‌کند."
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: فعال‌سازی پوش (اگر Firebase تنظیم شده باشد)
+        run: |
+          if [ -n "$GSJ" ]; then echo "VITE_PUSH_ENABLED=true" >> "$GITHUB_ENV"; echo "Push: ON"; else echo "Push: OFF (local daily reminder)"; fi
+
+      - name: ساخت نسخه وب برای اپ
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+
+      - name: ساخت پروژه اندروید
+        run: |
+          npx cap add android
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          if [ -n "$GSJ" ]; then printf '%s' "$GSJ" > android/app/google-services.json; fi
+
+      - name: آیکون و صفحه شروع
+        continue-on-error: true
+        run: npx @capacitor/assets generate --android --iconBackgroundColor '#1877F2' --iconBackgroundColorDark '#1877F2' --splashBackgroundColor '#FBF6EC' --splashBackgroundColorDark '#0E1420'
+
+      - name: همگام‌سازی
+        run: npx cap sync android
+
+      - name: ساخت APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: امضای APK
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          UNSIGNED=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > release.jks
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 تنظیم نشده؛ یک کلید موقت ساخته شد. نسخه‌های بعدی روی این نسخه نصب (به‌روز) نمی‌شوند."
+            KS_PASS=android
+            keytool -genkeypair -keystore release.jks -alias apexjob -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=Apex Job, O=Apex Job, C=AF"
+          fi
+          export KS_PASS
+          "$BT/zipalign" -p -f 4 "$UNSIGNED" aligned.apk
+          "$BT/apksigner" sign --ks release.jks --ks-key-alias apexjob --ks-pass env:KS_PASS --key-pass env:KS_PASS --out ApexJob.apk aligned.apk
+          "$BT/apksigner" verify ApexJob.apk && rm -f release.jks
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ApexJob-apk
+          path: ApexJob.apk
+
+      - name: انتشار در Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Apex Job 1.0.${{ github.run_number }}
+          files: ApexJob.apk
+          make_latest: true

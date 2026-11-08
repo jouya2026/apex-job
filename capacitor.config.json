@@ -1,0 +1,16 @@
+{
+  "appId": "com.apexjob.app",
+  "appName": "Apex Job",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#FBF6EC"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#1877F2"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+name: نوتیفیکیشن روزانه وظایف جدید
+
+on:
+  schedule:
+    - cron: '7 3 * * *'   # هر روز ساعت ۰۷:۳۷ به وقت کابل
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: ارسال نوتیفیکیشن
+        run: node scraper/notify.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

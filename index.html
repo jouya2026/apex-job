@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fa-AF" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FBF6EC">
+  <meta name="description" content="Apex Job — تازه‌ترین فرصت‌های شغلی افغانستان، هر روز">
+  <meta property="og:title" content="Apex Job">
+  <meta property="og:description" content="تازه‌ترین فرصت‌های شغلی افغانستان، هر روز">
+  <meta property="og:image" content="icon-512.png">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Apex Job</title>
+  <script>
+    // جلوگیری از چشمک‌زدن رنگ هنگام باز شدن
+    try {
+      var p = JSON.parse(localStorage.getItem('aj.prefs') || '{}');
+      var th = p.theme && p.theme !== 'system' ? p.theme : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = th;
+      var l = localStorage.getItem('aj.lang');
+      if (l === 'en') { document.documentElement.dir = 'ltr'; document.documentElement.lang = 'en'; }
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main id="view"></main>
+  <nav id="bottomnav"></nav>
+  <div id="sheet-root"></div>
+  <div id="sticker-root"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
