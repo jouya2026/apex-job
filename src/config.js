@@ -12,9 +12,10 @@ export const CONFIG = {
   whatsapp: '93790499585',          // شماره واتساپ با کد کشور، بدون + و صفر
   phone: '0790499585',              // برای دکمه تماس
   officeAddress: {
-    fa: 'آدرس دفتر خود را اینجا بنویسید',
-    ps: 'د دفتر پته دلته ولیکئ',
-    en: 'Write your office address here',
+officeAddress: {
+  fa: '📍 افغانستان، ولایت تخار، شهر تالقان، چوک مرکزی، جوار مارکیت موبایل سنتر، مارکیت مولانا، منزل اول، دکان شماره ۱۲',
+  ps: '📍 افغانستان، تخار ولایت، تالقان ښار، مرکزي چوک، د موبایل سنټر مارکېټ ترڅنګ، مولانا مارکېټ، لومړی منزل، ۱۲ نمبر دوکان',
+  en: '📍 Afghanistan, Takhar Province, Taloqan City, Central Square, Next to Mobile Center Market, Maulana Market, First Floor, Shop No. 12'
   },
   // ساعت یادآوری روزانه در اپ (وقتی Firebase فعال نیست)
   dailyReminderHour: 9,
