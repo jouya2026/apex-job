@@ -1,4 +1,4 @@
-name: ساخت اپلیکیشن اندروید (APK)
+name: ساخت اپلیکیشن اندروید (APK و AAB)
 
 on:
   push:
@@ -6,10 +6,12 @@ on:
     paths-ignore:
       - 'scraper/**'
       - 'supabase/**'
+      - 'store/**'
       - '**.md'
       - '.github/workflows/scrape.yml'
       - '.github/workflows/notify.yml'
       - '.github/workflows/web.yml'
+      - '.github/workflows/ios.yml'
   workflow_dispatch:
 
 permissions:
@@ -23,6 +25,7 @@ jobs:
       GSJ: ${{ secrets.GOOGLE_SERVICES_JSON }}
       KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,6 +57,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           VITE_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+          VITE_APP_BUILD: ${{ github.run_number }}
 
       - name: ساخت پروژه اندروید
         run: |
@@ -68,20 +72,21 @@ jobs:
       - name: همگام‌سازی
         run: npx cap sync android
 
-      - name: ساخت APK
+      - name: ساخت APK (برای نصب مستقیم) و AAB (برای Google Play)
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
 
-      - name: امضای APK
+      - name: امضای APK و AAB
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           UNSIGNED=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
           if [ -n "$KS_B64" ]; then
             echo "$KS_B64" | base64 -d > release.jks
           else
-            echo "::warning::ANDROID_KEYSTORE_BASE64 تنظیم نشده؛ یک کلید موقت ساخته شد. نسخه‌های بعدی روی این نسخه نصب (به‌روز) نمی‌شوند."
+            echo "::warning::ANDROID_KEYSTORE_BASE64 تنظیم نشده؛ یک کلید موقت ساخته شد. این نسخه برای Google Play قابل استفاده نیست."
             KS_PASS=android
             keytool -genkeypair -keystore release.jks -alias apexjob -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=Apex Job, O=Apex Job, C=AF"
@@ -89,17 +94,38 @@ jobs:
           export KS_PASS
           "$BT/zipalign" -p -f 4 "$UNSIGNED" aligned.apk
           "$BT/apksigner" sign --ks release.jks --ks-key-alias apexjob --ks-pass env:KS_PASS --key-pass env:KS_PASS --out ApexJob.apk aligned.apk
-          "$BT/apksigner" verify ApexJob.apk && rm -f release.jks
+          "$BT/apksigner" verify ApexJob.apk
+          cp "$AAB" ApexJob.aab
+          jarsigner -keystore release.jks -storepass "$KS_PASS" -keypass "$KS_PASS" -sigalg SHA256withRSA -digestalg SHA-256 ApexJob.aab apexjob
+          jarsigner -verify ApexJob.aab > /dev/null && echo "AAB signed"
+          rm -f release.jks
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ApexJob-apk
-          path: ApexJob.apk
+          name: ApexJob-android
+          path: |
+            ApexJob.apk
+            ApexJob.aab
 
       - name: انتشار در Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Apex Job 1.0.${{ github.run_number }}
-          files: ApexJob.apk
+          files: |
+            ApexJob.apk
+            ApexJob.aab
           make_latest: true
+
+      # اختیاری: ارسال خودکار نسخه تازه به Google Play (مسیر آزمایش داخلی)
+      # فقط وقتی Secret به نام PLAY_SERVICE_ACCOUNT_JSON ساخته شده باشد (رهنما: STORE-PUBLISHING.md)
+      - name: ارسال به Google Play (Internal testing)
+        if: env.PLAY_JSON != ''
+        continue-on-error: true
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.apexjob.app
+          releaseFiles: ApexJob.aab
+          track: internal
+          status: completed
