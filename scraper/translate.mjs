@@ -1,8 +1,8 @@
-// ترجمه خودکار عنوان و جزئیات وظایف به دری (اصطلاحات افغانستان) و پښتو
+// ترجمه خودکار عنوان و جزئیات وظایف و بورسیه‌ها به دری (اصطلاحات افغانستان) و پښتو
 // - اگر GEMINI_API_KEY تنظیم شده باشد: ترجمه با مدل هوش مصنوعی Gemini (کیفیت بهتر و ادبی)
 // - در غیر آن: Google Translate رایگان (دری افغانستان fa-AF و پښتو)
 // متغیرهای محیطی: SUPABASE_URL, SUPABASE_SECRET_KEY
-// اختیاری: GEMINI_API_KEY, GEMINI_MODEL, MAX_TRANSLATE (پیش‌فرض 25)
+// اختیاری: GEMINI_API_KEY, GEMINI_MODEL, MAX_TRANSLATE (پیش‌فرض 25), MAX_TRANSLATE_SCH (پیش‌فرض 15)
 import { createClient } from '@supabase/supabase-js';
 import * as cheerio from 'cheerio';
 import sanitizeHtml from 'sanitize-html';
@@ -180,22 +180,22 @@ async function googleTranslate(payload) {
 }
 
 // ---------------------------------------------------------------- اجرا
-async function main() {
+async function translateTable({ table, label, textFields, htmlFields, activeFilter, max }) {
   const today = new Date().toISOString().slice(0, 10);
-  const { data: jobs, error } = await db.from('jobs')
-    .select(['id', 'title', ...HTML_FIELDS, ...TEXT_FIELDS].join(','))
+  const { data: rows, error } = await db.from(table)
+    .select(['id', 'title', ...htmlFields, ...textFields].join(','))
     .is('translated_at', null)
-    .or(`closing_date.gte.${today},closing_date.is.null`)
+    .or(activeFilter(today))
     .order('first_seen_at', { ascending: false })
-    .limit(MAX);
+    .limit(max);
   if (error) throw error;
   const provider = GEMINI_API_KEY ? 'Gemini' : 'Google Translate';
-  console.log(`ترجمه با ${provider} — ${jobs.length} وظیفه در صف`);
+  console.log(`ترجمه با ${provider} — ${rows.length} ${label} در صف`);
 
   let ok = 0, failed = 0;
-  for (const job of jobs) {
-    const payload = { title: job.title };
-    for (const k of [...TEXT_FIELDS, ...HTML_FIELDS]) payload[k] = job[k] || '';
+  for (const row of rows) {
+    const payload = { title: row.title };
+    for (const k of [...textFields, ...htmlFields]) payload[k] = row[k] || '';
     try {
       let tr;
       try { tr = GEMINI_API_KEY ? await geminiTranslate(payload) : await googleTranslate(payload); }
@@ -209,22 +209,39 @@ async function main() {
       for (const lang of ['fa', 'ps']) {
         const src = tr[lang] || {};
         const fix = lang === 'fa' ? afghanize : (x) => x;
-        titles[lang] = fix(String(src.title || '').trim()) || job.title;
+        titles[lang] = fix(String(src.title || '').trim()) || row.title;
         out[lang] = {};
-        for (const k of TEXT_FIELDS) out[lang][k] = job[k] ? fix(String(src[k] || '').trim()) : '';
-        for (const k of HTML_FIELDS) out[lang][k] = job[k] ? cleanHtml(fix(String(src[k] || ''))) : '';
+        for (const k of textFields) out[lang][k] = row[k] ? fix(String(src[k] || '').trim()) : '';
+        for (const k of htmlFields) out[lang][k] = row[k] ? cleanHtml(fix(String(src[k] || ''))) : '';
       }
-      const { error: upErr } = await db.from('jobs').update({ title_tr: titles, tr: out, translated_at: new Date().toISOString() }).eq('id', job.id);
+      const { error: upErr } = await db.from(table).update({ title_tr: titles, tr: out, translated_at: new Date().toISOString() }).eq('id', row.id);
       if (upErr) throw upErr;
       ok++;
-      console.log(`✓ ${job.id} ${job.title} → ${titles.fa}`);
+      console.log(`✓ ${row.id} ${row.title} → ${titles.fa}`);
     } catch (e) {
       failed++;
-      console.warn(`× ${job.id}: ${e.message}`);
+      console.warn(`× ${row.id}: ${e.message}`);
     }
     await sleep(GEMINI_API_KEY ? 6000 : 800);
   }
-  console.log(`ترجمه شد: ${ok} — ناموفق: ${failed}`);
+  console.log(`${label} — ترجمه شد: ${ok} — ناموفق: ${failed}`);
+}
+
+async function main() {
+  await translateTable({
+    table: 'jobs', label: 'وظیفه', textFields: TEXT_FIELDS, htmlFields: HTML_FIELDS, max: MAX,
+    activeFilter: (today) => `closing_date.gte.${today},closing_date.is.null`,
+  });
+  // بورسیه‌ها (اگر جدول آن ساخته شده باشد)
+  try {
+    await translateTable({
+      table: 'scholarships', label: 'بورسیه', max: Number(process.env.MAX_TRANSLATE_SCH || 15),
+      textFields: ['deadline_text', 'open_to', 'language_req', 'funding_text', 'country_raw'], htmlFields: ['summary_html'],
+      activeFilter: (today) => `deadline.gte.${today},deadline.is.null`,
+    });
+  } catch (e) {
+    console.warn(`ترجمه بورسیه‌ها رد شد: ${e.message}`);
+  }
 }
 
 export { googleTranslate, afghanize, cleanHtml };
