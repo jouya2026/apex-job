@@ -94,6 +94,49 @@ export function logLead(job, lang, platform) {
   }).then(() => {}, () => {});
 }
 
+// ---------------------------------------------------------------- بورسیه‌ها
+const SCH_LIST_COLS = 'id,title,title_tr,organization,org_key,org_logo,countries,levels,funding,deadline,deadline_text,published,first_seen_at';
+const SCH_DETAIL_COLS = SCH_LIST_COLS + ',country_raw,funding_text,open_to,language_req,instruction_lang,gender_text,summary_html,apply_url,website_url,tr';
+
+export const cachedScholarships = () => store.get('aj.sch.cache', null);
+
+export async function fetchScholarships() {
+  if (!supabase) throw new Error('not-configured');
+  const all = [];
+  for (let from = 0; from < 5000; from += 1000) {
+    const { data, error } = await supabase
+      .from('scholarships')
+      .select(SCH_LIST_COLS)
+      .or(`deadline.gte.${todayISO()},deadline.is.null`)
+      .order('first_seen_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + 999);
+    if (error) throw error;
+    all.push(...data);
+    if (data.length < 1000) break;
+  }
+  store.set('aj.sch.cache', { at: Date.now(), items: all });
+  return all;
+}
+
+const schCache = new Map();
+export async function fetchScholarship(id) {
+  if (schCache.has(id)) return schCache.get(id);
+  if (!supabase) throw new Error('not-configured');
+  const { data, error } = await supabase.from('scholarships').select(SCH_DETAIL_COLS).eq('id', id).maybeSingle();
+  if (error) throw error;
+  if (data) schCache.set(id, data);
+  return data;
+}
+
+/** فهرست دنبال‌شده‌های این دستگاه برای نوتیفیکیشن (فقط وقتی پوش فعال است) */
+export async function syncFollows(token, lang, follows) {
+  if (!supabase || !token) return;
+  await supabase.rpc('set_follows', {
+    p_token: token, p_lang: lang, p_items: (follows || []).map((f) => ({ kind: f.kind, key: f.key })),
+  });
+}
+
 export async function savePushToken(token, platform, lang) {
   if (!supabase || !token) return;
   await supabase.from('push_tokens').upsert({ token, platform, lang }, { onConflict: 'token', ignoreDuplicates: true });

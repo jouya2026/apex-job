@@ -601,3 +601,207 @@ body.mini-on .results { min-height: 100vh; }
 .tr-note .ic { color: var(--brand); }
 .tr-note span { flex: 1; }
 .tr-note button { font-weight: 800; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+
+/* =====================================================================
+   خانواده APEX — طراحی یکپارچه (بورسیه‌ها، پروفایل ارگان و کشور)
+   همان زبان طراحی APEX Store Manager: نوار سرمه‌ای، زمینه خاکستری روشن،
+   کارت‌های سفید با حاشیه نرم، آیکن‌های مربعی و دکمه سبز اقدام
+   ===================================================================== */
+:root {
+  --ax-navy: #1b2a4a;
+  --ax-navy-2: #24375f;
+  --ax-bg: #eef2f7;
+  --ax-card: #ffffff;
+  --ax-line: #dbe3ee;
+  --ax-chip: #e8eef8;
+  --ax-text: #1a2533;
+  --ax-muted: #64748b;
+  --ax-green: #16a34a;
+  --ax-amber: #F5A70A;
+}
+[data-theme="dark"] {
+  --ax-navy: #111c33;
+  --ax-navy-2: #1a2a4a;
+  --ax-bg: #0f172a;
+  --ax-card: #1e293b;
+  --ax-line: #2b3a52;
+  --ax-chip: #273449;
+  --ax-text: #e2e8f0;
+  --ax-muted: #94a3b8;
+}
+#bottomnav { grid-template-columns: repeat(5, 1fr); }
+#bottomnav a span { white-space: nowrap; font-size: 11px; }
+
+body[data-route="sch"], body[data-route="schd"], body[data-route="org"], body[data-route="country"] { background: var(--ax-bg); }
+.ax-page { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; color: var(--ax-text); }
+.ax-page > * { min-width: 0; }
+
+/* نوار سرمه‌ای بالای صفحه */
+.ax-bar {
+  position: relative; overflow: hidden; padding: 20px 18px 16px; border-radius: 20px;
+  background: linear-gradient(135deg, var(--ax-navy), var(--ax-navy-2)); color: #fff;
+  box-shadow: 0 10px 30px -14px rgba(15, 23, 42, .55);
+}
+.ax-bar::after { content: ''; position: absolute; width: 220px; height: 220px; border-radius: 50%; inset-inline-end: -70px; top: -90px; background: rgba(245, 167, 10, .16); }
+.ax-bar-head { position: relative; display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.ax-bar-ico { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: rgba(255, 255, 255, .12); color: var(--ax-amber); flex: none; }
+.ax-bar h1 { font-size: clamp(20px, 4.6vw, 28px); font-weight: 800; }
+.ax-bar p { margin: 0; opacity: .82; font-size: 13.5px; }
+.ax-search { position: relative; display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 50px; border-radius: 14px; background: #fff; color: #1a2533; }
+.ax-search .ic { color: #64748b; }
+.ax-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 15px; height: 100%; color: inherit; }
+.ax-stats { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; max-width: 620px; }
+.ax-stats > div { padding: 8px; border-radius: 12px; text-align: center; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); }
+.ax-stats b { display: block; font-size: 19px; font-weight: 800; line-height: 1.3; color: var(--ax-amber); }
+.ax-stats span { font-size: 12px; opacity: .88; }
+
+/* زبانه‌ها (مقاطع) */
+.ax-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px; border-radius: 14px; background: var(--ax-card); border: 1px solid var(--ax-line); scrollbar-width: none; }
+.ax-tabs::-webkit-scrollbar { display: none; }
+.ax-tabs button { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 10px; font-weight: 700; font-size: 13.5px; color: var(--ax-muted); white-space: nowrap; transition: .18s; }
+.ax-tabs button small { font-size: 11.5px; background: var(--ax-chip); color: var(--ax-text); padding: 0 7px; border-radius: 99px; }
+.ax-tabs button.on { background: var(--ax-navy); color: #fff; box-shadow: 0 6px 14px -8px rgba(15, 23, 42, .7); }
+.ax-tabs button.on small { background: rgba(255, 255, 255, .18); color: #fff; }
+
+/* عنوان بخش با آیکن مربعی */
+.ax-sec-h { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ax-sec-h h2 { font-size: 16px; font-weight: 800; margin: 0; padding: 0; border: 0; }
+.ax-ico { width: 34px; height: 34px; border-radius: 9px; display: inline-grid; place-items: center; flex: none; background: var(--ax-chip); color: var(--ax-navy); }
+[data-theme="dark"] .ax-ico { color: #cbd5e1; }
+
+/* کشورهای پرطرفدار */
+.ax-countries { padding: 14px; border-radius: 16px; background: var(--ax-card); border: 1px solid var(--ax-line); }
+.ax-country-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.ax-country-row::-webkit-scrollbar { display: none; }
+.ax-country-chip { flex: none; width: 86px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 14px; border: 1px solid var(--ax-line); background: var(--ax-bg); text-align: center; transition: .18s; }
+.ax-country-chip:hover { border-color: var(--ax-navy); transform: translateY(-2px); }
+.ax-country-chip span { font-size: 12.5px; font-weight: 700; line-height: 1.4; }
+.ax-country-chip small { font-size: 11px; color: var(--ax-muted); }
+.ax-flag-round { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--ax-card), 0 2px 8px rgba(15, 23, 42, .2); }
+.ax-flag-mini { width: 20px; height: 14px; border-radius: 3px; object-fit: cover; vertical-align: middle; }
+
+/* فلترها */
+.ax-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ax-select { display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 12px; border-radius: 12px; background: var(--ax-card); border: 1px solid var(--ax-line); color: var(--ax-muted); }
+.ax-select select { border: 0; outline: 0; background: transparent; font-weight: 700; font-size: 13.5px; color: var(--ax-text); max-width: 200px; cursor: pointer; }
+.ax-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.ax-results-h h2 { font-size: 16px; font-weight: 800; margin: 2px; }
+.ax-list { display: grid; gap: 10px; }
+.ax-muted { color: var(--ax-muted); font-size: 13.5px; margin: 0; }
+
+/* کارت بورسیه */
+.ax-sch {
+  position: relative; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 14px;
+  border-radius: 14px; background: var(--ax-card); border: 1px solid var(--ax-line); box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+}
+.ax-sch:hover { transform: translateY(-2px); border-color: #b9c7da; box-shadow: 0 10px 24px -14px rgba(15, 23, 42, .35); }
+.ax-sch.is-new::before { content: ''; position: absolute; inset-block: 14px; inset-inline-start: -1px; width: 3px; border-radius: 3px; background: var(--ax-amber); }
+.ax-sch-media { position: relative; }
+.ax-logo { width: 52px; height: 52px; border-radius: 12px; background: #fff; border: 1px solid var(--ax-line); display: grid; place-items: center; overflow: hidden; }
+.ax-logo img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+.ax-logo.lg, .avatar.ax-logo-av.lg { width: 76px; height: 76px; border-radius: 18px; }
+.avatar.ax-logo-av { width: 52px; height: 52px; border-radius: 12px; }
+.ax-flag-dot { position: absolute; bottom: -4px; inset-inline-end: -6px; width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid var(--ax-card); box-shadow: 0 1px 4px rgba(0, 0, 0, .25); }
+.ax-flag-dot.lg { width: 32px; height: 32px; bottom: -6px; inset-inline-end: -8px; border-color: var(--ax-navy); }
+.ax-sch-main { min-width: 0; }
+.ax-sch-main h3 { font-size: 15.5px; font-weight: 800; line-height: 1.55; overflow-wrap: anywhere; color: var(--ax-text); }
+.ax-sch-org { color: var(--ax-muted); font-size: 13px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ax-sch-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ax-country { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--ax-text); margin-inline-end: 4px; }
+.ax-country .ic { color: var(--ax-navy); }
+[data-theme="dark"] .ax-country .ic { color: #93c5fd; }
+.ax-lvl { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 7px; background: var(--ax-chip); color: var(--ax-navy); font-size: 11.5px; font-weight: 700; }
+[data-theme="dark"] .ax-lvl { color: #cbd5e1; }
+.ax-lvl.light { background: rgba(255, 255, 255, .14); color: #fff; }
+.ax-sch-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.ax-fund { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.ax-fund.full { background: color-mix(in srgb, var(--ax-green) 14%, transparent); color: var(--ax-green); }
+.ax-fund.partial { background: color-mix(in srgb, var(--ax-amber) 18%, transparent); color: #a16207; }
+[data-theme="dark"] .ax-fund.full { color: #4ade80; }
+[data-theme="dark"] .ax-fund.partial { color: #fbbf24; }
+@media (max-width: 560px) {
+  .ax-sch { grid-template-columns: auto 1fr; }
+  .ax-sch-side { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; padding-top: 10px; border-top: 1px dashed var(--ax-line); }
+  .ax-logo, .avatar.ax-logo-av { width: 46px; height: 46px; }
+}
+
+/* سربرگ جزئیات / پروفایل */
+.ax-hero {
+  position: relative; overflow: hidden; padding: 20px 18px; border-radius: 20px; color: #fff;
+  background: linear-gradient(135deg, var(--ax-navy), var(--ax-navy-2)); box-shadow: 0 12px 30px -16px rgba(15, 23, 42, .6);
+}
+.ax-hero-flag { position: absolute; inset-inline-end: -30px; top: -24px; width: 220px; height: auto; opacity: .14; transform: rotate(-8deg); pointer-events: none; -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 85%); mask-image: linear-gradient(to bottom, #000 30%, transparent 85%); }
+.ax-hero-row { position: relative; display: flex; gap: 16px; align-items: flex-start; }
+.ax-hero-media { position: relative; flex: none; }
+.ax-hero-text { min-width: 0; flex: 1; }
+.ax-hero h1 { font-size: clamp(19px, 4.4vw, 26px); font-weight: 800; overflow-wrap: anywhere; }
+.ax-kicker { display: inline-block; font-size: 12px; font-weight: 700; color: var(--ax-amber); margin-bottom: 2px; }
+.ax-hero-org { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 10px; color: #cbd5e1; font-weight: 700; }
+.ax-hero-org:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.ax-hero-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ax-hero .dl-pill { background: rgba(255, 255, 255, .14); color: #fff; }
+.ax-hero .dl-pill.hot { background: #fee2e2; color: #b91c1c; }
+.ax-hero .ax-fund.full { background: #dcfce7; color: #15803d; }
+.ax-hero .ax-fund.partial { background: #fef3c7; color: #a16207; }
+.ax-count { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-size: 12.5px; font-weight: 700; color: #fff; }
+.ax-flag-big { width: 96px; height: 64px; border-radius: 10px; object-fit: cover; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); border: 2px solid rgba(255, 255, 255, .7); }
+.ax-hero-actions { position: relative; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+/* دکمه دنبال کردن */
+.ax-follow { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 11px; font-weight: 800; font-size: 13px; background: var(--ax-navy); color: #fff; border: 1px solid var(--ax-navy); transition: .18s; }
+.ax-follow.on { background: transparent; color: var(--ax-navy); }
+[data-theme="dark"] .ax-follow.on { color: #cbd5e1; border-color: #475569; }
+.ax-follow.light { background: var(--ax-amber); color: #1b2a4a; border-color: var(--ax-amber); }
+.ax-follow.light.on { background: rgba(255, 255, 255, .1); color: #fff; border-color: rgba(255, 255, 255, .35); }
+.ax-follow-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; opacity: .9; }
+.ax-follow.sm { height: 30px; padding: 0 10px; font-size: 12px; border-radius: 9px; margin-inline-start: 8px; vertical-align: middle; }
+.dh-org { flex-wrap: wrap; }
+.dh-org > a { display: inline-flex; align-items: center; gap: 6px; }
+.dh-org > a:hover { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+
+/* کارت‌ها و حقایق */
+.ax-card { padding: 16px; border-radius: 16px; background: var(--ax-card); border: 1px solid var(--ax-line); box-shadow: 0 1px 2px rgba(15, 23, 42, .05); min-width: 0; }
+.ax-card.prose .prose-body { color: var(--ax-text); }
+.ax-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.ax-fact { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 12px; background: var(--ax-bg); border: 1px solid var(--ax-line); min-width: 0; }
+.ax-fact small { display: block; color: var(--ax-muted); font-size: 12px; }
+.ax-fact b { display: block; font-size: 14px; font-weight: 700; line-height: 1.6; overflow-wrap: anywhere; }
+.ax-fact b a { color: var(--ax-navy); text-decoration: underline; text-underline-offset: 3px; }
+[data-theme="dark"] .ax-fact b a { color: #93c5fd; }
+.ax-fact em { display: block; font-style: normal; font-size: 12.5px; color: var(--ax-green); font-weight: 700; }
+.ax-fact em.hot { color: var(--hot); }
+.ax-detail-grid { display: grid; gap: 14px; align-items: start; }
+.ax-d-main, .ax-d-aside { display: grid; gap: 14px; min-width: 0; }
+.btn.ax-go { background: var(--ax-green); color: #fff; box-shadow: 0 8px 18px -10px var(--ax-green); }
+.btn.ax-go:hover { background: #15803d; }
+.ax-detail .apply-card { border: 1.5px solid color-mix(in srgb, var(--ax-green) 35%, var(--ax-line)); background: var(--ax-card); }
+.ax-help { background: var(--ax-bg); }
+.ax-apply-bar .btn.ax-go, .ax-apply-bar .btn.primary { flex: 1; }
+
+/* دنبال‌شده‌ها */
+.ax-follow-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.ax-follow-item { display: inline-flex; align-items: center; gap: 2px; padding-inline-start: 12px; border-radius: 999px; background: var(--brand-50); border: 1px solid var(--line); }
+.ax-follow-item a { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+.ax-follow-item .icon-btn { min-width: 34px; height: 34px; }
+.ax-feed { display: grid; gap: 10px; }
+
+/* پیام نسخه تازه */
+.update-banner { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: var(--ax-navy); color: #fff; box-shadow: var(--shadow); }
+.update-banner > .ic { color: var(--ax-amber); }
+.update-banner span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.update-banner small { opacity: .8; font-size: 12.5px; }
+.update-banner em { font-style: normal; font-weight: 800; padding: 6px 12px; border-radius: 10px; background: var(--ax-green); }
+
+@media (min-width: 1100px) {
+  .ax-detail-grid { grid-template-columns: minmax(0, 1fr) 400px; }
+  .ax-d-aside { position: sticky; top: 80px; }
+  .ax-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ax-bar { padding: 28px 30px 24px; }
+  .ax-hero { padding: 26px 28px; }
+}
+@media (min-width: 1360px) {
+  .ax-page > .ax-list, .ax-profile .ax-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.ax-privacy { display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 8px; color: var(--brand); font-weight: 700; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px; }

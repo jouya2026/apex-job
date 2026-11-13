@@ -3,6 +3,7 @@ import '@fontsource-variable/vazirmatn';
 import './styles.css';
 import DOMPurify from 'dompurify';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { CONFIG } from './config.js';
 import { configured, fetchJobs, fetchJob, fetchAds, fetchLastUpdate, fetchSettings, cachedSettings, cachedJobs, logLead, store, todayISO } from './api.js';
 import { LANGS, t, num, getLang, setLang, applyDocumentLang, trProvince, trCategory, trCategoryOne, splitCats, trType, trGender, trNationality, fmtDate, timeAgo } from './i18n.js';
@@ -12,6 +13,12 @@ import { isNative, applyNotificationSetting } from './notify.js';
 import { buildFaq, waMessage, mergeSettings } from './faq.js';
 import { PROVINCES, CATEGORIES } from './data/taxonomy.js';
 import { initPwa, installBannerHtml, installPwa, dismissPwa } from './pwa.js';
+import { fetchScholarships, cachedScholarships } from './api.js';
+import { orgKey } from './data/orgs.js';
+import {
+  initScholarships, renderScholarships, refreshSchResults, renderSchDetail, renderOrgProfile, renderCountryProfile,
+  followBtn, followedFeedHtml, followedListHtml, followedNewCount, handleSchClick, handleSchChange, handleSchInput, SCH_CLICK_SELECTOR,
+} from './scholarships.js';
 
 // ---------------------------------------------------------------- state
 const DEFAULT_FILTERS = { q: '', province: '', category: '', type: '', gender: '', posted: '', quick: '', sort: 'new' };
@@ -30,6 +37,10 @@ const state = {
   homeScroll: 0,
   detail: null,
   showOriginal: false,
+  sch: cachedScholarships()?.items || [],
+  schLoaded: !!cachedScholarships()?.items,
+  schError: null,
+  schDetail: null,
 };
 if (!state.seenAt) { state.seenAt = Date.now(); store.set('aj.seenAt', state.seenAt); }
 
@@ -185,7 +196,7 @@ const unseenCount = () => state.jobs.filter((j) => new Date(j.first_seen_at).get
 
 // ---------------------------------------------------------------- shell
 function renderShell() {
-  const unseen = unseenCount();
+  const unseen = unseenCount() + followedNewCount();
   const route = currentRoute().name;
   const badge = unseen ? `<span class="nbadge">${num(unseen > 99 ? '99+' : unseen)}</span>` : '';
   const initial = state.prefs.name ? esc(state.prefs.name.trim()[0]) : icon('user', 19);
@@ -195,6 +206,7 @@ function renderShell() {
       <a class="brand" href="#/" aria-label="Apex Job">${LOGO_MARK}<span class="brand-name" dir="ltr">Apex<b>Job</b></span></a>
       <nav class="tb-links">
         <a href="#/" class="${route === 'home' ? 'on' : ''}">${icon('home', 18)}${t('home')}</a>
+        <a href="#/scholarships" class="${['sch', 'schd', 'country'].includes(route) ? 'on' : ''}">${icon('cap', 18)}${t('scholarships')}</a>
         <a href="#/new" class="${route === 'new' ? 'on' : ''}">${icon('bell', 18)}${t('updates')}${badge}</a>
         <a href="#/saved" class="${route === 'saved' ? 'on' : ''}">${icon('bookmark', 18)}${t('savedJobs')}</a>
       </nav>
@@ -211,6 +223,7 @@ function renderShell() {
     </div>`;
   $('#bottomnav').innerHTML = `
     <a href="#/" class="${route === 'home' ? 'on' : ''}">${icon('home', 22)}<span>${t('home')}</span></a>
+    <a href="#/scholarships" class="${['sch', 'schd', 'country'].includes(route) ? 'on' : ''}">${icon('cap', 22)}<span>${t('scholarships')}</span></a>
     <a href="#/new" class="${route === 'new' ? 'on' : ''}">${icon('bell', 22)}<span>${t('updates')}</span>${badge}</a>
     <a href="#/saved" class="${route === 'saved' ? 'on' : ''}">${icon('bookmark', 22)}<span>${t('savedJobs')}</span></a>
     <a href="#/profile" class="${route === 'profile' ? 'on' : ''}">${icon('user', 22)}<span>${t('profile')}</span></a>`;
@@ -371,6 +384,7 @@ function renderHome() {
       </div>
     </section>
     ${unseen ? `<a class="notice-new" href="#/new">${icon('bell', 18)}<span>${t('newSince', { n: unseen })}</span><b>${t('viewNew')}${icon('next', 16, 'flip')}</b></a>` : ''}
+    ${updateBannerHtml()}
     ${installBannerHtml()}
     ${state.offline ? `<div class="notice-off">${icon('refresh', 16)}${t('offline')}</div>` : ''}
     ${heroSliderHtml()}
@@ -450,6 +464,8 @@ window.addEventListener('scroll', () => {
   if (scrollRaf) return;
   scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; updateMiniBar(); });
 }, { passive: true });
+
+document.addEventListener('input', (e) => { if (e.target.matches?.('[data-sq]')) handleSchInput(e.target); });
 
 let qTimer;
 document.addEventListener('input', (e) => {
@@ -712,7 +728,7 @@ function headInner(job) {
   return `${avatar(job.organization, 'lg')}
     <div class="dh-text">
       <h1 dir="auto">${esc(jt(job))}</h1>
-      <p class="dh-org" dir="auto">${icon('building', 16)}${esc(job.organization)}</p>
+      <p class="dh-org" dir="auto"><a href="#/org/${esc(orgKey(job.organization))}">${icon('building', 16)}${esc(job.organization)}</a>${job.organization ? followBtn('org', orgKey(job.organization), job.organization, 'sm') : ''}</p>
       <div class="dh-chips">
         ${isNew(job) ? `<span class="star-badge">${icon('star', 13)}${t('new')}</span>` : ''}
         ${deadlinePill(job)}
@@ -728,6 +744,7 @@ function renderUpdates() {
   const groups = [[t('today'), recent.filter((j) => ageDays(j) === 0)], [t('yesterday'), recent.filter((j) => ageDays(j) === 1)], [t('earlier'), recent.filter((j) => ageDays(j) > 1)]];
   $('#view').innerHTML = `<div class="page">
     <div class="page-head"><h1>${icon('bell', 24)}${t('updatesTitle')}</h1></div>
+    ${state.loaded ? followedFeedHtml() : ''}
     ${!state.loaded ? `<div class="job-list">${skeletons(4)}</div>`
       : recent.length ? groups.filter(([, l]) => l.length).map(([label, l]) => `
         <div class="group-label"><span>${esc(label)}</span><small>${num(l.length)}</small></div>
@@ -738,6 +755,7 @@ function renderUpdates() {
     state.seenAt = Date.now();
     store.set('aj.seenAt', state.seenAt);
   }
+  renderShell();
 }
 
 function renderSaved() {
@@ -779,6 +797,7 @@ function renderProfile() {
         <label class="switch"><input type="checkbox" id="pf-notify" ${p.notify ? 'checked' : ''} ${isNative() ? '' : 'disabled'}><i></i></label>
       </div>
     </section>
+    ${followedListHtml()}
     <section class="card">
       <h2>${icon('pin', 18)}${t('favProvinces')}</h2>
       ${prefChips('provinces', Object.keys(PROVINCES).sort((a, b) => trProvince(a).localeCompare(trProvince(b))), (k) => trProvince(k))}
@@ -799,6 +818,7 @@ function renderProfile() {
     <section class="card about">
       <div class="about-brand">${LOGO_MARK}<span dir="ltr">Apex<b>Job</b></span></div>
       <p>${t('aboutText')}</p>
+      <a class="ax-privacy" href="${isNative() && CONFIG.siteUrl ? esc(CONFIG.siteUrl.replace(/\/?$/, '/') + 'privacy.html') : 'privacy.html'}" target="_blank" rel="noopener">${icon('eye', 15)}${t('privacy')}</a>
       <small>${t('version')} ${num(CONFIG.version)}${state.lastUpdate ? ` · ${t('updatedAgo', { t: timeAgo(state.lastUpdate) })}` : ''}</small>
     </section>
   </div>`;
@@ -817,6 +837,10 @@ function currentRoute() {
   const h = location.hash.replace(/^#/, '') || '/';
   let m;
   if ((m = h.match(/^\/job\/(\d+)/))) return { name: 'job', id: Number(m[1]) };
+  if ((m = h.match(/^\/sch\/(\d+)/))) return { name: 'schd', id: Number(m[1]) };
+  if ((m = h.match(/^\/org\/([^/?#]+)/))) return { name: 'org', key: decodeURIComponent(m[1]) };
+  if ((m = h.match(/^\/country\/([a-z]{2})/))) return { name: 'country', key: m[1] };
+  if (h.startsWith('/scholarships')) return { name: 'sch' };
   if (h.startsWith('/new')) return { name: 'new' };
   if (h.startsWith('/saved')) return { name: 'saved' };
   if (h.startsWith('/profile')) return { name: 'profile' };
@@ -830,10 +854,14 @@ function render() {
   if (lastRoute === 'home' && r.name !== 'home') state.homeScroll = window.scrollY;
   if (sheetOpen()) closeSheet(true);
   document.body.dataset.route = r.name;
-  if (r.name !== 'job') document.title = 'Apex Job';
+  if (!['job', 'schd', 'org', 'country'].includes(r.name)) document.title = 'Apex Job';
   renderShell();
   if (r.name === 'home') renderHome();
   else if (r.name === 'job') renderDetail(r.id);
+  else if (r.name === 'sch') renderScholarships($('#view'));
+  else if (r.name === 'schd') renderSchDetail($('#view'), r.id, () => currentRoute().name === 'schd' && currentRoute().id === r.id);
+  else if (r.name === 'org') renderOrgProfile($('#view'), r.key);
+  else if (r.name === 'country') renderCountryProfile($('#view'), r.key);
   else if (r.name === 'new') renderUpdates();
   else if (r.name === 'saved') renderSaved();
   else renderProfile();
@@ -890,6 +918,8 @@ if (touchDevice) {
 
 // ---------------------------------------------------------------- events
 document.addEventListener('click', async (e) => {
+  const schEl = e.target.closest(SCH_CLICK_SELECTOR);
+  if (schEl && handleSchClick(schEl, e, rerenderCurrent)) return;
   const el = e.target.closest('[data-tr-toggle],[data-pwa-install],[data-pwa-dismiss],[data-wa],[data-save],[data-share],[data-back],[data-quick],[data-cat],[data-fchip],[data-chip-remove],[data-clear],[data-more],[data-open-filters],[data-close-sheet],[data-lang],[data-theme-set],[data-pref],[data-retry],#lang-btn,#theme-btn,[data-scroll-apply]');
   const menu = $('#lang-menu');
   if (menu && !e.target.closest('.lang-wrap')) menu.classList.remove('open');
@@ -976,6 +1006,7 @@ document.addEventListener('click', async (e) => {
 });
 
 document.addEventListener('change', (e) => {
+  if (e.target.matches?.('[data-sf]') && handleSchChange(e.target, rerenderCurrent)) return;
   const el = e.target.closest('[data-f]');
   if (!el) return;
   state.filters[el.dataset.f] = el.value;
@@ -988,6 +1019,58 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------------------------------------------------------------- data loading
+/** پیام «نسخه تازه» در اپ نصب‌شده (تنظیم از جدول settings، کلید app_update) */
+function updateBannerHtml() {
+  const u = state.settings.app_update;
+  if (!u || !isNative()) return '';
+  const platform = Capacitor.getPlatform();
+  const latest = Number(platform === 'ios' ? u.ios_build : u.android_build) || 0;
+  const url = platform === 'ios' ? u.ios_url : u.android_url;
+  if (!url || !CONFIG.build || latest <= CONFIG.build) return '';
+  const notes = (u.notes && (u.notes[getLang()] || u.notes.fa)) || '';
+  return `<a class="update-banner" href="${esc(url)}" target="_blank" rel="noopener">
+    ${icon('download', 22)}<span><b>${t('updateTitle')}</b>${notes ? `<small>${esc(notes)}</small>` : ''}</span><em>${t('updateBtn')}</em>
+  </a>`;
+}
+
+/** صفحه فعلی بدون پریدن به بالا دوباره ساخته شود */
+function rerenderCurrent() {
+  const y = window.scrollY;
+  const r = currentRoute();
+  let p;
+  if (r.name === 'sch') renderScholarships($('#view'));
+  else if (r.name === 'schd') p = renderSchDetail($('#view'), r.id, () => currentRoute().name === 'schd' && currentRoute().id === r.id);
+  else if (r.name === 'org') renderOrgProfile($('#view'), r.key);
+  else if (r.name === 'country') renderCountryProfile($('#view'), r.key);
+  else if (r.name === 'profile') renderProfile();
+  else if (r.name === 'new') renderUpdates();
+  else if (r.name === 'saved') renderSaved();
+  renderShell();
+  if (p) return p.then(() => window.scrollTo(0, y));
+  window.scrollTo(0, y);
+  return Promise.resolve();
+}
+
+async function loadScholarships() {
+  state.schError = null;
+  try {
+    state.sch = await fetchScholarships();
+    state.schLoaded = true;
+  } catch (err) {
+    if (!state.schLoaded) state.schError = err?.message === 'not-configured' ? 'not-configured' : 'network';
+  }
+  const r = currentRoute().name;
+  if (isTextInput(document.activeElement)) { if (r === 'sch') refreshSchResults(); return; }
+  if (['sch', 'org', 'country', 'new'].includes(r)) rerenderCurrent();
+  else renderShell();
+}
+
+initScholarships({
+  state, toast, avatar, emptyState, skeletons, jobCard,
+  waNumber: () => state.settings.whatsapp || CONFIG.whatsapp,
+  settingsText: () => ({ phone: state.settings.phone, address: sx(state.settings.address), hours: sx(state.settings.hours) }),
+});
+
 async function load() {
   state.error = null;
   const cache = cachedJobs();
@@ -998,6 +1081,7 @@ async function load() {
   } else if (!state.loaded) {
     render();
   }
+  loadScholarships();
   try {
     const [jobs, ads, last, settings] = await Promise.all([
       fetchJobs(), fetchAds(), fetchLastUpdate().catch(() => null), fetchSettings().catch(() => null),
@@ -1018,8 +1102,8 @@ async function load() {
   if (r === 'home') {
     if (typing) { refreshResults(); renderShell(); }
     else { const y = window.scrollY; renderShell(); renderHome(); window.scrollTo(0, y); updateMiniBar(); }
-  } else if (r === 'job') { renderShell(); fillDetailSlots(); }
-  else if (!typing) render();
+  } else if (r === 'job' || r === 'schd') { renderShell(); if (r === 'job') fillDetailSlots(); }
+  else if (!typing) rerenderCurrent();
   renderSticker($('#sticker-root'));
 }
 

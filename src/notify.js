@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { CONFIG } from './config.js';
-import { savePushToken } from './api.js';
+import { savePushToken, syncFollows } from './api.js';
 import { t, getLang } from './i18n.js';
 
 export const isNative = () => Capacitor.isNativePlatform();
@@ -23,6 +23,8 @@ async function setupListeners() {
   if (CONFIG.pushEnabled) {
     PushNotifications.addListener('registration', (tok) => {
       savePushToken(tok.value, Capacitor.getPlatform(), getLang()).catch(() => {});
+      try { localStorage.setItem('aj.pushToken', tok.value); } catch {}
+      pushFollowsSync();
     });
     PushNotifications.addListener('pushNotificationActionPerformed', (a) => {
       location.hash = a?.notification?.data?.route || '#/new';
@@ -71,4 +73,16 @@ export async function applyNotificationSetting(enabled) {
     console.warn('notifications:', e);
     return false;
   }
+}
+
+/** دنبال‌شده‌ها را برای نوتیفیکیشن سرور ثبت می‌کند (فقط اپ اندروید با Firebase) */
+export function pushFollowsSync() {
+  if (!isNative() || !CONFIG.pushEnabled) return;
+  let token = null;
+  let follows = [];
+  try {
+    token = localStorage.getItem('aj.pushToken');
+    follows = JSON.parse(localStorage.getItem('aj.follows') || '[]');
+  } catch {}
+  if (token) syncFollows(token, getLang(), follows).catch(() => {});
 }
